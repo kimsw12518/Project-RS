@@ -1,5 +1,6 @@
 using System.Collections;
 using System.Collections.Generic;
+using UnityEditor;
 using UnityEngine;
 
 public class GameManager : MonoBehaviour
@@ -76,11 +77,17 @@ public class GameManager : MonoBehaviour
         
     }
 
+    public bool Pause = false;
+
+
     // Update is called once per frame
     void FixedUpdate()
     {
-        m_time += (Time.fixedDeltaTime * 1000 * m_bpm / m_baseBpm);
-        m_realTimeDiff += (Time.fixedDeltaTime * 1000 * (1 - (m_bpm / m_baseBpm)));
+        if (Pause == false)
+        {
+            m_time += (Time.fixedDeltaTime * 1000 * m_bpm / m_baseBpm);
+            m_realTimeDiff += (Time.fixedDeltaTime * 1000 * (1 - (m_bpm / m_baseBpm)));
+        }
     }
 
     private void Update()

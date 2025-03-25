@@ -7,8 +7,9 @@ using UnityEngine;
 public class NoteHeap
 {
     public int count = 0;
+    public GameObject root;
     [Serializable]
-    struct node
+    class node
     {
         public int key;
         public GameObject value;
@@ -27,9 +28,15 @@ public class NoteHeap
             value = note;
             key = note.GetComponent<NoteController>().JudgeTime;
         }
+        public node(node n)
+        {
+            value = n.value;
+            key = n.key;
+        }
     }
     [SerializeField]
     List<node> heap = new List<node>() { new node() };
+
 
     int getKey(int index)
     {
@@ -47,7 +54,7 @@ public class NoteHeap
         }
         else
         {
-            if (getKey(index * 2) >= getKey(index * 2 + 1))
+            if (getKey(index * 2) <= getKey(index * 2 + 1))
             {
                 return index * 2;
             }
@@ -68,12 +75,13 @@ public class NoteHeap
         node Node = heap[count];
         Node.set(newNote);
         int index = count;
-        while (index != 1 && Node.key > getKey(index/2))
+        while (index != 1 && Node.key < getKey(index/2))
         {
             heap[index] = heap[index/2];
             index = index / 2;
         }
         heap[index] = Node;
+        root = heap[1].value;
     }
     public GameObject Peek()
     {
@@ -81,19 +89,24 @@ public class NoteHeap
     }
     public void remove()
     {
-        heap[1] = heap[count];
+        if (count == 0)
+        {
+            return;
+        }
+        heap[1] = new node(heap[count]);
         heap[count].reset();
         count--;
         int index = 1;
-        while (getLeastChild(index) != -1)
+        while (true)
         {
             int child = getLeastChild(index);
+            if (child == -1)
+            {
+                break;
+            }
             if (getKey(child) < getKey(index))
             {
-                heap[0] = heap[index];
-                heap[index] = heap[child];
-                heap[child] = heap[0];
-                heap[0].reset();
+                (heap[index], heap[child]) = (heap[child], heap[index]);
                 index = child;
             }
             else
@@ -101,5 +114,6 @@ public class NoteHeap
                 break;
             }
         }
+        root=heap[1].value;
     }
 }

@@ -79,9 +79,7 @@ public class PatternParser : MonoBehaviour
         int lane;
         int beatLineMode = 1;
         float simTime=0;
-        float simPrevTime = 0;
-        float simRealtimeOffset = 0;
-        float simBpm;
+        float simRealtime = 0;
         int offset = 0;
         int curBeat = -2;
 
@@ -200,53 +198,50 @@ public class PatternParser : MonoBehaviour
             m_rawPattern.RemoveAt(0);
         }
         tempPattern = SortByTime(tempPattern,1);
-        simBpm = m_baseBpm;
-        while (tempPattern.Count!=0)    //selfnote 및 노트 처리 타이밍 보정
+        List<Tuple<int, float>> speedChange = new List<Tuple<int, float>>() {new Tuple<int,float>(0,m_baseBpm)};
+        for (int i = 0; i < tempPattern.Count; i++) //시뮬레이션을 위한 변속 시점
         {
-            if (tempPattern[0].lane == 0)
+            if (tempPattern[i].lane == 0)
             {
-                simPrevTime = simTime;
-                simTime = tempPattern[0].targetTime;
-                simRealtimeOffset += ((m_baseBpm/simBpm)-1)*(simTime-simPrevTime);
-                simBpm = tempPattern[0].selfSpeed;
-                m_pattern.Add(tempPattern[0]);
+                speedChange.Add(new Tuple<int, float>(tempPattern[i].targetTime, tempPattern[i].selfSpeed));
             }
-            else if (tempPattern[0].lane > 0 && tempPattern[0].selfSpeed!=0)
+        }
+        for (int i=0;i<tempPattern.Count;i++)    //모든 노트 시뮬레이션 및 처리 시점을 위한 절대시간 계산
+        {
+            NoteData ND = tempPattern[i];
+            if(ND.lane >= 1)
             {
-                NoteData ND = new NoteData();
-                simPrevTime = simTime;
-                simTime = tempPattern[0].targetTime;
-                simRealtimeOffset += ((m_baseBpm / simBpm) - 1) * (simTime - simPrevTime);
-                ND.lane = tempPattern[0].lane;
-                ND.targetTime = tempPattern[0].targetTime + Convert.ToInt32(math.round(simRealtimeOffset));
-                ND.judgeTime = tempPattern[0].judgeTime + Convert.ToInt32(math.round(simRealtimeOffset));
-                ND.selfSpeed = tempPattern[0].selfSpeed;
-                ND.generateTime = tempPattern[0].generateTime + Convert.ToInt32(math.round(simRealtimeOffset)); ;
-                m_pattern.Add(ND);
-
-            }
-            else if (tempPattern[0].lane > 0 && tempPattern[0].lane < 5 && tempPattern[0].selfSpeed==0)
-            {
-                NoteData ND = new NoteData();
-                simPrevTime = simTime;
-                simTime = tempPattern[0].targetTime;
-                simRealtimeOffset += ((m_baseBpm / simBpm) - 1) * (simTime - simPrevTime);
-                ND.lane = tempPattern[0].lane;
-                ND.targetTime = tempPattern[0].targetTime;
-                ND.judgeTime = tempPattern[0].judgeTime;
-                ND.selfSpeed = tempPattern[0].selfSpeed;
-                ND.generateTime = tempPattern[0].generateTime;
+                simTime = 0;
+                simRealtime = 0;
+                int bpmIndex =1;
+                while (speedChange.Count>bpmIndex&& ND.targetTime > speedChange[bpmIndex].Item1)
+                {
+                    simRealtime += (speedChange[bpmIndex].Item1 - simTime) * m_baseBpm / speedChange[bpmIndex-1].Item2;
+                    simTime = speedChange[bpmIndex].Item1;
+                    bpmIndex++;
+                }
+                simRealtime += (ND.targetTime - simTime) * m_baseBpm / speedChange[bpmIndex-1].Item2;
+                if(ND.selfSpeed != 0)
+                {
+                    ND.targetTime = Convert.ToInt32(simRealtime);
+                    ND.judgeTime = Convert.ToInt32(simRealtime);
+                    ND.generateTime = Convert.ToInt32(simRealtime-400000/ND.selfSpeed);
+                }
+                else
+                {
+                    ND.judgeTime = Convert.ToInt32(simRealtime);
+                }
                 m_pattern.Add(ND);
             }
             else
             {
-                m_pattern.Add(tempPattern[0]);
+                m_pattern.Add(ND);
             }
-            tempPattern.RemoveAt(0);
         }
         m_pattern = SortByTime(m_pattern);
     }
 
+    int cnt=0;
     // Update is called once per frame
     void Update()
     {

@@ -109,7 +109,7 @@ public class NoteController : MonoBehaviour
 
         if (m_targetTime <= m_curTime)
         {
-            if (m_lane == 0)
+            if (m_lane == 0) // 여기서 풀로 돌려진 뒤, 노트 처리 시점에 다시 풀로 돌려보내는 시도가 일어남 *수정필요
             {
                 Play.Bpm = m_selfspeed;
                 NoteManager.Instance.returnToPool(gameObject);
@@ -121,11 +121,11 @@ public class NoteController : MonoBehaviour
             }
 
 
-            if (m_targetTime <= m_curTime - 0)
+            if (m_lane > 0 && m_judgeTime <= Play.CurTime+Play.RealTimeDiff - 500)
             {
                 if (m_lane < 5 && m_lane > 0)
                 {
-                    print(Play.CurTime+Play.RealTimeDiff-m_targetTime);
+                    print(Play.CurTime+Play.RealTimeDiff-m_judgeTime);
                     Judge();
                 }
                 else

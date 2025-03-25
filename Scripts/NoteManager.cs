@@ -1,6 +1,8 @@
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Linq;
 using UnityEngine;
 
 public class NoteManager : MonoBehaviour
@@ -34,7 +36,7 @@ public class NoteManager : MonoBehaviour
     GameObject m_notePrefab;
     [SerializeField]
     Transform m_lane;
-    Queue<GameObject> m_noteQueue = new Queue<GameObject>();
+    ConcurrentQueue<GameObject> m_noteQueue = new ConcurrentQueue<GameObject>();
     static NoteHeap m_lane1 = new NoteHeap();
     static NoteHeap m_lane2 = new NoteHeap();
     static NoteHeap m_lane3 = new NoteHeap();
@@ -67,23 +69,37 @@ public class NoteManager : MonoBehaviour
         
     }
 
+    public List<GameObject> ihatefuckingbugs = new List<GameObject>();
+
+    private readonly object queueLock = new object();
     public void CreateNote(NoteData ND)
     {
         GameObject note;
-        if (m_noteQueue.Count > 0)
+        lock (queueLock)
         {
-            note = m_noteQueue.Dequeue();
-            note.SetActive(true);
-            note.GetComponent<NoteController>().init(ND.lane, ND.targetTime, ND.judgeTime, ND.selfSpeed);
-        }
-        else
-        {
-            note = Instantiate(m_notePrefab,m_lane);
-            note.GetComponent<NoteController>().init(ND.lane, ND.targetTime, ND.judgeTime, ND.selfSpeed);
-        }
-        if (ND.lane >= 1 && ND.lane <= 4)
-        {
-            m_notes[ND.lane-1].insert(note);
+            ihatefuckingbugs=m_noteQueue.ToList<GameObject>();
+            if (m_noteQueue.TryDequeue(out note))
+            {
+                //while (note.activeSelf == true)
+                //{
+                //    if (!m_noteQueue.TryDequeue(out note))
+                //    {
+                //        note = Instantiate(m_notePrefab, m_lane);
+                //        note.SetActive(false);
+                //    }
+                //}
+                note.SetActive(true);
+                note.GetComponent<NoteController>().init(ND.lane, ND.targetTime, ND.judgeTime, ND.selfSpeed);
+            }
+            else
+            {
+                note = Instantiate(m_notePrefab, m_lane);
+                note.GetComponent<NoteController>().init(ND.lane, ND.targetTime, ND.judgeTime, ND.selfSpeed);
+            }
+            if (ND.lane >= 1 && ND.lane <= 4)
+            {
+                m_notes[ND.lane - 1].insert(note);
+            }
         }
     }
 }
