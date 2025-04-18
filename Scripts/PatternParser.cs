@@ -96,6 +96,7 @@ public class PatternParser : MonoBehaviour
         m_introTime = int.Parse(m_rawPattern[0]);
         m_rawPattern.RemoveAt(0);
         GameManager.Instance.BaseBpm = m_baseBpm;
+        List<int> longStart = new List<int>() { 0, 0, 0, 0 };
         while (m_rawPattern.Count > 0) //패턴을 읽어들임
         {
             NoteData ND = new NoteData();
@@ -134,6 +135,35 @@ public class PatternParser : MonoBehaviour
                         ND.generateTime = ND.targetTime-4000;
                         ND.judgeTime = ND.targetTime;
                         tempPattern.Add( ND );
+                    }
+                    if(data % 10 == 2)
+                    {
+                        longStart[lane-1] = beat * 192 + subbeat;
+                        ND.lane = lane;
+                        ND.generateTime = ND.targetTime - 4000;
+                        ND.judgeTime = ND.targetTime;
+                        ND.longtype = 1;
+                        tempPattern.Add(ND);
+                    }
+                    if(data%10 == 3) //틱노트는 보이지 않으니 상관없으나, 롱노트 시작과 끝을 잇는 부분은 보여야 함. line renderer을 써볼까?
+                    {
+                        int longtickCount=1;
+                        while (longStart[lane - 1] + longtickCount * 12 < beat * 192 + subbeat)
+                        {
+                            NoteData LongTick = new NoteData(2);
+                            LongTick.lane = lane;
+                            LongTick.targetTime= Convert.ToInt32(1000 / m_baseBpm * (longStart[lane - 1] + longtickCount * 12) + m_introTime) - offset;
+                            LongTick.generateTime = LongTick.targetTime-4000;
+                            LongTick.judgeTime= LongTick.targetTime;
+                            tempPattern.Add(LongTick);
+                            longtickCount++;
+                        }
+                        longStart[lane - 1] = beat * 192 + subbeat;
+                        ND.lane = lane;
+                        ND.generateTime = ND.targetTime - 4000;
+                        ND.judgeTime = ND.targetTime;
+                        ND.longtype = 3;
+                        tempPattern.Add(ND);
                     }
                 }
             }

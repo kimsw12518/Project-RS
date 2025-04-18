@@ -42,8 +42,15 @@ public class NoteManager : MonoBehaviour
     static NoteHeap m_lane3 = new NoteHeap();
     static NoteHeap m_lane4 = new NoteHeap();
     [SerializeField]
+    List<Transform> m_longDefault = new List<Transform>();
+    [SerializeField]
     [ReadOnly]
     public List<NoteHeap> m_notes = new List<NoteHeap>() { m_lane1, m_lane2, m_lane3, m_lane4 };
+    public Dictionary<Transform, Transform> LongPairs = new Dictionary<Transform, Transform>();
+    List<Transform> m_unpaired = new List<Transform>() { null, null, null, null };
+    public List<GameObject> LongSustain = new List<GameObject>() { null, null, null, null }; 
+    public List<int> LaneJudge = new List<int>(4) { -1,-1,-1,-1 };
+
 
     public List<float> RealTimes = new List<float>();
 
@@ -58,7 +65,9 @@ public class NoteManager : MonoBehaviour
 
     public void returnToPool(GameObject note)
     {
+        note.transform.position = new Vector3(0, 1000, 0);
         note.GetComponent<SpriteRenderer>().enabled = false;
+        note.GetComponent<LineRenderer>().enabled = false;
         m_noteQueue.Enqueue(note);
         note.gameObject.SetActive(false);
     }
@@ -89,12 +98,31 @@ public class NoteManager : MonoBehaviour
                 //    }
                 //}
                 note.SetActive(true);
-                note.GetComponent<NoteController>().init(ND.lane, ND.targetTime, ND.judgeTime, ND.selfSpeed);
+                note.GetComponent<NoteController>().init(ND.lane, ND.targetTime, ND.judgeTime, ND.longtype, ND.selfSpeed);
+                if (ND.longtype == 1) {
+                    LongPairs[note.transform] = m_longDefault[ND.lane - 1];
+                    m_unpaired[ND.lane - 1] = note.transform;
+                }
+                else if (ND.longtype == 3)
+                {
+                    LongPairs[m_unpaired[ND.lane - 1]] = note.transform;
+                    m_unpaired[ND.lane - 1] = null;
+                }
             }
             else
             {
                 note = Instantiate(m_notePrefab, m_lane);
-                note.GetComponent<NoteController>().init(ND.lane, ND.targetTime, ND.judgeTime, ND.selfSpeed);
+                note.GetComponent<NoteController>().init(ND.lane, ND.targetTime, ND.judgeTime, ND.longtype, ND.selfSpeed);
+                if (ND.longtype == 1)
+                {
+                    LongPairs[note.transform] = m_longDefault[ND.lane - 1];
+                    m_unpaired[ND.lane - 1] = note.transform;
+                }
+                else if (ND.longtype == 3)
+                {
+                    LongPairs[m_unpaired[ND.lane - 1]] = note.transform;
+                    m_unpaired[ND.lane - 1] = null;
+                }
             }
             if (ND.lane >= 1 && ND.lane <= 4)
             {

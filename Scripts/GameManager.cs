@@ -53,6 +53,10 @@ public class GameManager : MonoBehaviour
     Color m_noteA = new Color(0.5f,1,1,1);
     [SerializeField]
     Color m_noteB = new Color(1, 0.5f, 1, 1);
+    [SerializeField]
+    int m_score = 0;
+    [SerializeField]
+    int m_exScore = 0;
 
     public Color NoteColorA { get { return m_noteA; } }
     public Color NoteColorB { get { return m_noteB; } }
@@ -64,6 +68,8 @@ public class GameManager : MonoBehaviour
     public int Ratio { get { return m_ratio; } set { m_targetRatio = value; } }
     public float Bpm { set { m_bpm = value; } }
     public float BaseBpm { set { m_baseBpm = value; m_bpm = value; } }
+    public int Score { get { return m_score; } set { m_score = value; } }
+    public int ExScore { get { return m_exScore; } set { m_exScore = value; } }
 
     [SerializeField]
     NoteManager m_noteManager;
